@@ -26,6 +26,9 @@ export default async function SignInPage({ searchParams }: LoginProps) {
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-8">
         <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-sm">
           {/* OAuth Buttons */}
+          <div className="space-y-2 text-center mb-9">
+              <h1 className="text-3xl font-semibold tracking-tight">Sign in</h1>
+          </div>
           <div className="mb-6">
             <form action={signInWithOAuthAction}>
               <input type="hidden" name="provider" value="google" />
@@ -56,7 +59,7 @@ export default async function SignInPage({ searchParams }: LoginProps) {
             </form>
           </div>
 
-          <div className="relative mb-6">
+          {/* <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300"></div>
             </div>
@@ -65,10 +68,10 @@ export default async function SignInPage({ searchParams }: LoginProps) {
                 Or continue with email
               </span>
             </div>
-          </div>
+          </div> */}
 
           {/* Email/Password Form */}
-          <form className="flex flex-col space-y-6" action={signInAction}>
+          {/* <form className="flex flex-col space-y-6" action={signInAction}>
             <div className="space-y-2 text-center">
               <h1 className="text-3xl font-semibold tracking-tight">Sign in</h1>
               <p className="text-sm text-muted-foreground">
@@ -125,7 +128,7 @@ export default async function SignInPage({ searchParams }: LoginProps) {
               Sign in
             </SubmitButton>
             <FormMessage message={message} />
-          </form>
+          </form> */}
         </div>
       </div>
     </>
