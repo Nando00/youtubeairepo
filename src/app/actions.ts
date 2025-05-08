@@ -14,9 +14,8 @@ export const signInWithOAuthAction = async (formData: FormData) => {
 
   const supabase = await createClient();
 
-  // Get the current URL from the request headers
-  const origin = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || 'http://localhost:3000';
-  const redirectTo = `${origin}/auth/callback`;
+  // Use the production URL directly
+  const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: provider as any,
