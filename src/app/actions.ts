@@ -9,7 +9,7 @@ export const signInWithOAuthAction = async (formData: FormData) => {
   const provider = formData.get("provider")?.toString();
 
   if (!provider) {
-    return encodedRedirect("error", "/sign-in", "Provider is required");
+    redirect("/sign-in?error=Provider is required");
   }
 
   const supabase = await createClient();
@@ -22,14 +22,14 @@ export const signInWithOAuthAction = async (formData: FormData) => {
   });
 
   if (error) {
-    return encodedRedirect("error", "/sign-in", error.message);
+    redirect(`/sign-in?error=${encodeURIComponent(error.message)}`);
   }
 
   if (data?.url) {
-    return redirect(data.url);
+    redirect(data.url);
   }
 
-  return encodedRedirect("error", "/sign-in", "Could not initiate OAuth flow");
+  redirect("/sign-in?error=Could not initiate OAuth flow");
 };
 
 export const signUpAction = async (formData: FormData) => {
@@ -39,11 +39,7 @@ export const signUpAction = async (formData: FormData) => {
   const supabase = await createClient();
 
   if (!email || !password) {
-    return encodedRedirect(
-      "error",
-      "/sign-up",
-      "Email and password are required"
-    );
+    redirect("/sign-up?error=Email and password are required");
   }
 
   // Check if user already exists by attempting to sign in with email only
@@ -55,11 +51,7 @@ export const signUpAction = async (formData: FormData) => {
   });
 
   if (existingUserData?.user) {
-    return encodedRedirect(
-      "error",
-      "/sign-up",
-      "An account with this email already exists. Please sign in instead."
-    );
+    redirect("/sign-up?error=An account with this email already exists. Please sign in instead.");
   }
 
   const {
@@ -77,7 +69,7 @@ export const signUpAction = async (formData: FormData) => {
   });
 
   if (error) {
-    return encodedRedirect("error", "/sign-up", error.message);
+    redirect(`/sign-up?error=${encodeURIComponent(error.message)}`);
   }
 
   if (user) {
@@ -90,12 +82,7 @@ export const signUpAction = async (formData: FormData) => {
         .single();
 
       if (fetchError && fetchError.code !== "PGRST116") {
-        // PGRST116 is the error code for no rows returned
-        return encodedRedirect(
-          "error",
-          "/sign-up",
-          "Error checking user. Please try again."
-        );
+        redirect("/sign-up?error=Error checking user. Please try again.");
       }
 
       // Only insert if user doesn't exist
@@ -110,27 +97,15 @@ export const signUpAction = async (formData: FormData) => {
         });
 
         if (updateError) {
-          return encodedRedirect(
-            "error",
-            "/sign-up",
-            "Error updating user profile. Please try again."
-          );
+          redirect("/sign-up?error=Error updating user profile. Please try again.");
         }
       }
     } catch (err) {
-      return encodedRedirect(
-        "error",
-        "/sign-up",
-        "An unexpected error occurred. Please try again."
-      );
+      redirect("/sign-up?error=An unexpected error occurred. Please try again.");
     }
   }
 
-  return encodedRedirect(
-    "success",
-    "/sign-up",
-    "Thanks for signing up! Please check your email for a verification link."
-  );
+  redirect("/sign-up?success=Thanks for signing up! Please check your email for a verification link.");
 };
 
 export const signInAction = async (formData: FormData) => {
@@ -144,10 +119,10 @@ export const signInAction = async (formData: FormData) => {
   });
 
   if (error) {
-    return encodedRedirect("error", "/sign-in", error.message);
+    redirect(`/sign-in?error=${encodeURIComponent(error.message)}`);
   }
 
-  return redirect("/dashboard");
+  redirect("/dashboard");
 };
 
 export const forgotPasswordAction = async (formData: FormData) => {
@@ -156,28 +131,20 @@ export const forgotPasswordAction = async (formData: FormData) => {
   const callbackUrl = formData.get("callbackUrl")?.toString();
 
   if (!email) {
-    return encodedRedirect("error", "/forgot-password", "Email is required");
+    redirect("/forgot-password?error=Email is required");
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {});
 
   if (error) {
-    return encodedRedirect(
-      "error",
-      "/forgot-password",
-      "Could not reset password"
-    );
+    redirect("/forgot-password?error=Could not reset password");
   }
 
   if (callbackUrl) {
-    return redirect(callbackUrl);
+    redirect(callbackUrl);
   }
 
-  return encodedRedirect(
-    "success",
-    "/forgot-password",
-    "Check your email for a link to reset your password."
-  );
+  redirect("/forgot-password?success=Check your email for a link to reset your password.");
 };
 
 export const resetPasswordAction = async (formData: FormData) => {
@@ -187,19 +154,11 @@ export const resetPasswordAction = async (formData: FormData) => {
   const confirmPassword = formData.get("confirmPassword") as string;
 
   if (!password || !confirmPassword) {
-    return encodedRedirect(
-      "error",
-      "/protected/reset-password",
-      "Password and confirm password are required"
-    );
+    redirect("/protected/reset-password?error=Password and confirm password are required");
   }
 
   if (password !== confirmPassword) {
-    return encodedRedirect(
-      "error",
-      "/dashboard/reset-password",
-      "Passwords do not match"
-    );
+    redirect("/dashboard/reset-password?error=Passwords do not match");
   }
 
   const { error } = await supabase.auth.updateUser({
@@ -207,24 +166,16 @@ export const resetPasswordAction = async (formData: FormData) => {
   });
 
   if (error) {
-    return encodedRedirect(
-      "error",
-      "/dashboard/reset-password",
-      "Password update failed"
-    );
+    redirect("/dashboard/reset-password?error=Password update failed");
   }
 
-  return encodedRedirect(
-    "success",
-    "/protected/reset-password",
-    "Password updated"
-  );
+  redirect("/protected/reset-password?success=Password updated");
 };
 
 export const signOutAction = async () => {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  return redirect("/sign-in");
+  redirect("/sign-in");
 };
 
 export const checkUserSubscription = async (userId: string) => {

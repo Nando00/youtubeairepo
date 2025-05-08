@@ -1,6 +1,6 @@
 import { signInAction, signInWithOAuthAction } from "@/app/actions";
 import { FormMessage, Message } from "@/components/form-message";
-import Navbar from "@/components/navbar";
+import AuthNavbar from "@/components/auth-navbar";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +22,7 @@ export default async function SignInPage({ searchParams }: LoginProps) {
 
   return (
     <>
-      <Navbar />
+      <AuthNavbar />
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-8">
         <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-sm">
           {/* OAuth Buttons */}
