@@ -14,10 +14,14 @@ export const signInWithOAuthAction = async (formData: FormData) => {
 
   const supabase = await createClient();
 
+  // Get the current URL from the request headers
+  const origin = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || 'http://localhost:3000';
+  const redirectTo = `${origin}/auth/callback`;
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: provider as any,
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+      redirectTo,
     },
   });
 
