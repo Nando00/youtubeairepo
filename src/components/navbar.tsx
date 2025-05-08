@@ -1,16 +1,32 @@
+'use client'
+
 import Link from "next/link";
-import { createClient } from "../../supabase/server";
 import { Button } from "./ui/button";
-import { User, UserCircle, Youtube } from "lucide-react";
+import { Youtube } from "lucide-react";
 import UserProfile from "./user-profile";
 import { ThemeToggle } from "./theme-toggle";
+import { createClient } from "../../supabase/client";
+import { useEffect, useState } from "react";
 
-export default async function Navbar() {
+export default function Navbar() {
+  const [user, setUser] = useState<any>(null);
   const supabase = createClient();
 
-  const {
-    data: { user },
-  } = await (await supabase).auth.getUser();
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <nav className="w-full border-b border-border bg-background py-2">
@@ -28,7 +44,7 @@ export default async function Navbar() {
               >
                 <Button>Dashboard</Button>
               </Link>
-              <UserProfile />
+              <UserProfile user={user} />
             </>
           ) : (
             <>

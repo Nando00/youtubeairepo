@@ -5,9 +5,21 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { createClient } from '../../supabase/client'
 import { useRouter } from 'next/navigation'
 
-export default function UserProfile() {
+interface UserProfileProps {
+    user: any;
+}
+
+export default function UserProfile({ user }: UserProfileProps) {
     const supabase = createClient()
     const router = useRouter()
+
+    const handleSignOut = async () => {
+        await supabase.auth.signOut()
+        router.push("/")
+        router.refresh()
+    }
+
+    if (!user) return null
 
     return (
         <DropdownMenu>
@@ -17,14 +29,10 @@ export default function UserProfile() {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={async () => {
-                    await supabase.auth.signOut()
-                    router.push("/")
-                }}>
+                <DropdownMenuItem onClick={handleSignOut}>
                     Sign out
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
-
     )
 }
