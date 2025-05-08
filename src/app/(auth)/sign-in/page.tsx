@@ -13,7 +13,7 @@ interface LoginProps {
 export default async function SignInPage({ searchParams }: LoginProps) {
   const message = await searchParams;
 
-  if ("message" in message) {
+  if ("message" in message || "error" in message || "success" in message) {
     return (
       <div className="flex h-screen w-full flex-1 items-center justify-center p-4 sm:max-w-md">
         <FormMessage message={message} />

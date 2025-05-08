@@ -18,6 +18,22 @@ export const signUpAction = async (formData: FormData) => {
     );
   }
 
+  // Check if user already exists by attempting to sign in with email only
+  const { data: existingUserData } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: false,
+    },
+  });
+
+  if (existingUserData?.user) {
+    return encodedRedirect(
+      "error",
+      "/sign-up",
+      "An account with this email already exists. Please sign in instead.",
+    );
+  }
+
   const {
     data: { user },
     error,
