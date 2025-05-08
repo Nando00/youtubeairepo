@@ -12,5 +12,15 @@ export function encodedRedirect(
   path: string,
   message: string,
 ) {
-  return redirect(`${path}?${type}=${encodeURIComponent(message)}`);
+  try {
+    return redirect(`${path}?${type}=${encodeURIComponent(message)}`);
+  } catch (error) {
+    // If redirect throws an error, return a simple redirect object
+    return {
+      redirect: {
+        destination: `${path}?${type}=${encodeURIComponent(message)}`,
+        permanent: false,
+      },
+    };
+  }
 }
