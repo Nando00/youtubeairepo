@@ -38,20 +38,28 @@ export async function GET(request: Request) {
 
         // If user doesn't exist in your custom table, create a record
         if (!existingUser || fetchError?.code === "PGRST116") {
-          const { error: insertError } = await supabase.from("users").insert({
+          const userData = {
             id: data.user.id,
-            user_id: data.user.id,
-            full_name:
-              data.user.user_metadata?.full_name ||
-              data.user.user_metadata?.name ||
-              "",
             email: data.user.email,
-            token_identifier: data.user.id,
+            full_name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || "",
             created_at: new Date().toISOString(),
-          });
+            updated_at: new Date().toISOString()
+          };
+
+          console.log("Attempting to create user with data:", userData);
+
+          const { error: insertError } = await supabase
+            .from("users")
+            .insert(userData);
 
           if (insertError) {
             console.error("Error creating user record:", insertError);
+            console.error("Error details:", {
+              code: insertError.code,
+              message: insertError.message,
+              details: insertError.details
+            });
+            
             // If we can't create the user record, sign them out and redirect to sign in
             await supabase.auth.signOut();
             return NextResponse.redirect(
