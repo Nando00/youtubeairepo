@@ -1,4 +1,5 @@
 import { createClient } from "../../../../../supabase/server";
+import { createClient as createServiceClient } from "../../../../../supabase/service";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -34,6 +35,7 @@ export async function GET(request: Request) {
     }
 
     const supabase = await createClient();
+    const serviceClient = await createServiceClient();
 
     // Exchange the code for a session
     const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
@@ -52,7 +54,7 @@ export async function GET(request: Request) {
         const userId = data.user.id.toString();
 
         // First, try to delete any existing user record (in case of manual deletion)
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await serviceClient
           .from("users")
           .delete()
           .eq("user_id", userId);
@@ -80,8 +82,8 @@ export async function GET(request: Request) {
           email: userData.email ? 'present' : 'missing'
         });
 
-        // Insert the user record
-        const { error: insertError } = await supabase
+        // Insert the user record using service role client
+        const { error: insertError } = await serviceClient
           .from("users")
           .insert(userData)
           .select()
