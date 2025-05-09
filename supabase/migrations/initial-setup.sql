@@ -76,8 +76,9 @@ DROP POLICY IF EXISTS "Service role can manage users" ON public.users;
 CREATE POLICY "Users can view own data" ON public.users
     FOR SELECT USING (auth.uid()::text = user_id);
 
-CREATE POLICY "Service role can manage users" ON public.users
-    FOR ALL USING (auth.role() = 'service_role');
+-- Allow service role to bypass RLS
+ALTER TABLE public.users FORCE ROW LEVEL SECURITY;
+GRANT ALL ON public.users TO service_role;
 
 -- Create a function that will be triggered when a new user signs up
 CREATE OR REPLACE FUNCTION public.handle_new_user()
