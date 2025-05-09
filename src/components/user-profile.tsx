@@ -4,9 +4,10 @@ import { Button } from './ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu'
 import { createClient } from '../../supabase/client'
 import { useRouter } from 'next/navigation'
+import { User } from '@supabase/supabase-js'
 
 interface UserProfileProps {
-    user: any;
+    user: User;
 }
 
 export default function UserProfile({ user }: UserProfileProps) {
@@ -14,12 +15,25 @@ export default function UserProfile({ user }: UserProfileProps) {
     const router = useRouter()
 
     const handleSignOut = async () => {
-        await supabase.auth.signOut()
-        router.push("/")
-        router.refresh()
+        try {
+            const { error } = await supabase.auth.signOut()
+            if (error) {
+                console.error('Error signing out:', error)
+                return
+            }
+            router.push("/")
+            router.refresh()
+        } catch (error) {
+            console.error('Error in sign out:', error)
+        }
     }
 
-    if (!user) return null
+    if (!user) {
+        console.log('No user provided to UserProfile')
+        return null
+    }
+
+    console.log('UserProfile rendering with user:', user)
 
     return (
         <DropdownMenu>

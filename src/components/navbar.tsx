@@ -7,26 +7,57 @@ import UserProfile from "./user-profile";
 import { ThemeToggle } from "./theme-toggle";
 import { createClient } from "../../supabase/client";
 import { useEffect, useState } from "react";
+import { User } from "@supabase/supabase-js";
 
 export default function Navbar() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          return;
+        }
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
+        console.log('Initial session:', session);
+        setUser(session?.user ?? null);
+        setLoading(false);
 
-    return () => subscription.unsubscribe();
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+          console.log('Auth state changed:', _event, session);
+          setUser(session?.user ?? null);
+        });
+
+        return () => subscription.unsubscribe();
+      } catch (error) {
+        console.error('Error in auth initialization:', error);
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
+
+  if (loading) {
+    return (
+      <nav className="w-full border-b border-border bg-background py-2">
+        <div className="container mx-auto px-4 flex justify-between items-center">
+          <Link href="/" prefetch className="text-xl font-bold flex items-center">
+            <Youtube className="w-6 h-6 text-red-600 mr-2" />
+            <span>TranscriptAI</span>
+          </Link>
+          <ThemeToggle />
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="w-full border-b border-border bg-background py-2">
