@@ -28,35 +28,44 @@ export async function GET(request: Request) {
 
     // Check if user was successfully authenticated and exists
     if (data?.user) {
-      // Check if the user already exists in your custom users table
-      const { data: existingUser, error: fetchError } = await supabase
-        .from("users")
-        .select("id")
-        .eq("id", data.user.id)
-        .single();
+      try {
+        // Check if the user already exists in your custom users table
+        const { data: existingUser, error: fetchError } = await supabase
+          .from("users")
+          .select("id")
+          .eq("id", data.user.id)
+          .single();
 
-      // If there was an error other than "no rows returned"
-      if (fetchError && fetchError.code !== "PGRST116") {
-        console.error("Error checking if user exists:", fetchError);
-      }
+        // If user doesn't exist in your custom table, create a record
+        if (!existingUser || fetchError?.code === "PGRST116") {
+          const { error: insertError } = await supabase.from("users").insert({
+            id: data.user.id,
+            user_id: data.user.id,
+            full_name:
+              data.user.user_metadata?.full_name ||
+              data.user.user_metadata?.name ||
+              "",
+            email: data.user.email,
+            token_identifier: data.user.id,
+            created_at: new Date().toISOString(),
+          });
 
-      // If user doesn't exist in your custom table, create a record
-      if (!existingUser) {
-        const { error: insertError } = await supabase.from("users").insert({
-          id: data.user.id,
-          user_id: data.user.id,
-          full_name:
-            data.user.user_metadata?.full_name ||
-            data.user.user_metadata?.name ||
-            "",
-          email: data.user.email,
-          token_identifier: data.user.id,
-          created_at: new Date().toISOString(),
-        });
-
-        if (insertError) {
-          console.error("Error creating user record:", insertError);
+          if (insertError) {
+            console.error("Error creating user record:", insertError);
+            // If we can't create the user record, sign them out and redirect to sign in
+            await supabase.auth.signOut();
+            return NextResponse.redirect(
+              new URL("/sign-in?error=user-creation-failed", requestUrl.origin)
+            );
+          }
         }
+      } catch (error) {
+        console.error("Error in user creation process:", error);
+        // If there's an error, sign them out and redirect to sign in
+        await supabase.auth.signOut();
+        return NextResponse.redirect(
+          new URL("/sign-in?error=user-creation-failed", requestUrl.origin)
+        );
       }
     }
 
