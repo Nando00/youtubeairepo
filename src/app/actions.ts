@@ -3,6 +3,7 @@
 import { encodedRedirect } from "@/utils/utils";
 import { redirect } from "next/navigation";
 import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
 
 // New OAuth function
 export const signInWithOAuthAction = async (formData: FormData) => {
@@ -12,7 +13,8 @@ export const signInWithOAuthAction = async (formData: FormData) => {
     redirect("/sign-in?error=Provider is required");
   }
 
-  const supabase = await createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
 
   // Get the current URL to determine if we're in development or production
   const isDevelopment = process.env.NODE_ENV === 'development';
@@ -75,7 +77,8 @@ export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
   const password = formData.get("password")?.toString();
   const fullName = formData.get("full_name")?.toString() || "";
-  const supabase = await createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
 
   if (!email || !password) {
     redirect("/sign-up?error=Email and password are required");
@@ -150,7 +153,8 @@ export const signUpAction = async (formData: FormData) => {
 export const signInAction = async (formData: FormData) => {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const supabase = await createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -166,7 +170,8 @@ export const signInAction = async (formData: FormData) => {
 
 export const forgotPasswordAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
-  const supabase = await createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   const callbackUrl = formData.get("callbackUrl")?.toString();
 
   if (!email) {
@@ -187,7 +192,8 @@ export const forgotPasswordAction = async (formData: FormData) => {
 };
 
 export const resetPasswordAction = async (formData: FormData) => {
-  const supabase = await createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
 
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
@@ -205,31 +211,32 @@ export const resetPasswordAction = async (formData: FormData) => {
   });
 
   if (error) {
-    redirect("/dashboard/reset-password?error=Password update failed");
+    redirect(`/dashboard/reset-password?error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect("/protected/reset-password?success=Password updated");
+  redirect("/dashboard?success=Password updated successfully");
 };
 
 export const signOutAction = async () => {
-  const supabase = await createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   await supabase.auth.signOut();
   redirect("/sign-in");
 };
 
 export const checkUserSubscription = async (userId: string) => {
-  const supabase = await createClient();
-
-  const { data: subscription, error } = await supabase
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+  const { data, error } = await supabase
     .from("subscriptions")
     .select("*")
     .eq("user_id", userId)
-    .eq("status", "active")
     .single();
 
   if (error) {
-    return false;
+    console.error("Error checking subscription:", error);
+    return null;
   }
 
-  return !!subscription;
+  return data;
 };
