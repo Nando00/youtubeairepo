@@ -59,27 +59,62 @@ export async function GET(request: Request) {
         if (!existingUser) {
           const userData = {
             id: data.user.id,
-            user_id: data.user.id,
+            user_id: data.user.id.toString(), // Convert UUID to string
             email: data.user.email,
             full_name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || "",
             name: data.user.user_metadata?.name || "",
             avatar_url: data.user.user_metadata?.avatar_url || null,
-            token_identifier: data.user.email || data.user.id,
+            token_identifier: data.user.email || data.user.id.toString(), // Ensure token_identifier is not null
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
 
-          console.log("Attempting to create user with data:", userData);
+          console.log("Attempting to create user with data:", {
+            ...userData,
+            id: userData.id.substring(0, 8) + '...', // Log partial ID for security
+            email: userData.email ? 'present' : 'missing'
+          });
 
-          const { error: insertError } = await supabase
-            .from("users")
-            .insert(userData);
+          try {
+            // First check if user_id already exists
+            const { data: existingUserId, error: checkError } = await supabase
+              .from("users")
+              .select("user_id")
+              .eq("user_id", userData.user_id)
+              .single();
 
-          if (insertError) {
-            console.error("Error creating user record:", insertError);
-            console.error("Error details:", insertError);
-            
-            // If we can't create the user record, sign them out and redirect to sign in
+            if (existingUserId) {
+              console.error("User ID already exists:", userData.user_id);
+              await supabase.auth.signOut();
+              return NextResponse.redirect(
+                new URL("/sign-in?error=user-already-exists", requestUrl.origin)
+              );
+            }
+
+            const { error: insertError } = await supabase
+              .from("users")
+              .insert(userData)
+              .select()
+              .single();
+
+            if (insertError) {
+              console.error("Error creating user record:", {
+                code: insertError.code,
+                message: insertError.message,
+                details: insertError.details,
+                hint: insertError.hint
+              });
+              
+              // If we can't create the user record, sign them out and redirect to sign in
+              await supabase.auth.signOut();
+              return NextResponse.redirect(
+                new URL(`/sign-in?error=${encodeURIComponent(insertError.message)}`, requestUrl.origin)
+              );
+            }
+
+            console.log("User created successfully");
+          } catch (insertError) {
+            console.error("Unexpected error during user creation:", insertError);
             await supabase.auth.signOut();
             return NextResponse.redirect(
               new URL("/sign-in?error=user-creation-failed", requestUrl.origin)
