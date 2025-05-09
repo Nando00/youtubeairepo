@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     }
 
     const supabase = await createClient();
-    const serviceClient = await createServiceClient();
+    const serviceClient = createServiceClient();
 
     // Exchange the code for a session
     const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
