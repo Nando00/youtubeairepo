@@ -48,23 +48,32 @@ export async function GET(request: Request) {
     // Check if user was successfully authenticated and exists
     if (data?.user) {
       try {
+        // Get the current user's ID as a string
+        const userId = data.user.id.toString();
+
         // Check if the user already exists in your custom users table
         const { data: existingUser, error: fetchError } = await supabase
           .from("users")
-          .select("id")
-          .eq("id", data.user.id)
+          .select("id, user_id")
+          .eq("user_id", userId)
           .single();
+
+        console.log('Checking for existing user:', {
+          userId,
+          exists: !!existingUser,
+          error: fetchError?.message
+        });
 
         // If user doesn't exist in your custom table, create a record
         if (!existingUser) {
           const userData = {
             id: data.user.id,
-            user_id: data.user.id.toString(), // Convert UUID to string
+            user_id: userId,
             email: data.user.email,
             full_name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || "",
             name: data.user.user_metadata?.name || "",
             avatar_url: data.user.user_metadata?.avatar_url || null,
-            token_identifier: data.user.email || data.user.id.toString(), // Ensure token_identifier is not null
+            token_identifier: data.user.email || userId,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
@@ -80,17 +89,18 @@ export async function GET(request: Request) {
             const { data: existingUserId, error: checkError } = await supabase
               .from("users")
               .select("user_id")
-              .eq("user_id", userData.user_id)
+              .eq("user_id", userId)
               .single();
 
             if (existingUserId) {
-              console.error("User ID already exists:", userData.user_id);
+              console.error("User ID already exists:", userId);
               await supabase.auth.signOut();
               return NextResponse.redirect(
                 new URL("/sign-in?error=user-already-exists", requestUrl.origin)
               );
             }
 
+            // Insert the user record
             const { error: insertError } = await supabase
               .from("users")
               .insert(userData)
@@ -102,7 +112,8 @@ export async function GET(request: Request) {
                 code: insertError.code,
                 message: insertError.message,
                 details: insertError.details,
-                hint: insertError.hint
+                hint: insertError.hint,
+                userId
               });
               
               // If we can't create the user record, sign them out and redirect to sign in
@@ -120,6 +131,8 @@ export async function GET(request: Request) {
               new URL("/sign-in?error=user-creation-failed", requestUrl.origin)
             );
           }
+        } else {
+          console.log("User already exists, proceeding with login");
         }
       } catch (error) {
         console.error("Error in user creation process:", error);

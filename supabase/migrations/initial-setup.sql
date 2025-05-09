@@ -66,34 +66,20 @@ ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.webhook_events ENABLE ROW LEVEL SECURITY;
 
--- Create policies if they don't exist
-DO $$
-BEGIN
-    -- Check if the policy for users exists
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE schemaname = 'public' 
-        AND tablename = 'users' 
-        AND policyname = 'Users can view own data'
-    ) THEN
-        -- Create policy to allow users to see only their own data
-        EXECUTE 'CREATE POLICY "Users can view own data" ON public.users
-                FOR SELECT USING (auth.uid()::text = user_id)';
-    END IF;
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view own data" ON public.users;
+DROP POLICY IF EXISTS "Users can insert own data" ON public.users;
+DROP POLICY IF EXISTS "Users can update own data" ON public.users;
 
-    -- Check if the policy for subscriptions exists
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE schemaname = 'public' 
-        AND tablename = 'subscriptions' 
-        AND policyname = 'Users can view own subscriptions'
-    ) THEN
-        -- Create policy for subscriptions
-        EXECUTE 'CREATE POLICY "Users can view own subscriptions" ON public.subscriptions
-                FOR SELECT USING (auth.uid()::text = user_id)';
-    END IF;
-END
-$$;
+-- Create new policies
+CREATE POLICY "Users can view own data" ON public.users
+    FOR SELECT USING (auth.uid()::text = user_id);
+
+CREATE POLICY "Users can insert own data" ON public.users
+    FOR INSERT WITH CHECK (auth.uid()::text = user_id);
+
+CREATE POLICY "Users can update own data" ON public.users
+    FOR UPDATE USING (auth.uid()::text = user_id);
 
 -- Create a function that will be triggered when a new user signs up
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -116,7 +102,7 @@ BEGIN
     NEW.raw_user_meta_data->>'name',
     NEW.raw_user_meta_data->>'full_name',
     NEW.raw_user_meta_data->>'avatar_url',
-    NEW.email,
+    COALESCE(NEW.email, NEW.id::text),
     NEW.created_at,
     NEW.updated_at
   );
