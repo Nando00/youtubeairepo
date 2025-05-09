@@ -1,15 +1,33 @@
 import { createClient } from "../../../../../supabase/server";
 import { NextResponse } from "next/server";
-import { SupabaseClient } from "@supabase/supabase-js";
 
 export async function GET(request: Request) {
   try {
     const requestUrl = new URL(request.url);
     const code = requestUrl.searchParams.get("code");
+    const error = requestUrl.searchParams.get("error");
+    const error_description = requestUrl.searchParams.get("error_description");
     const redirect_to = requestUrl.searchParams.get("redirect_to");
 
+    // Log the full URL and parameters for debugging
+    console.log('Auth callback received:', {
+      url: request.url,
+      code: code ? 'present' : 'missing',
+      error,
+      error_description,
+      redirect_to
+    });
+
+    // Handle OAuth errors
+    if (error) {
+      console.error('OAuth error:', { error, error_description });
+      return NextResponse.redirect(
+        new URL(`/sign-in?error=${encodeURIComponent(error_description || error)}`, requestUrl.origin)
+      );
+    }
+
     if (!code) {
-      console.error("No code provided in callback");
+      console.error("No code provided in callback. Full URL:", request.url);
       return NextResponse.redirect(
         new URL("/sign-in?error=missing-code", requestUrl.origin)
       );
@@ -18,12 +36,12 @@ export async function GET(request: Request) {
     const supabase = await createClient();
 
     // Exchange the code for a session
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (error) {
-      console.error("Error exchanging code for session:", error);
+    if (sessionError) {
+      console.error("Error exchanging code for session:", sessionError);
       return NextResponse.redirect(
-        new URL("/sign-in?error=auth-failed", requestUrl.origin)
+        new URL(`/sign-in?error=${encodeURIComponent(sessionError.message)}`, requestUrl.origin)
       );
     }
 
@@ -41,8 +59,12 @@ export async function GET(request: Request) {
         if (!existingUser) {
           const userData = {
             id: data.user.id,
+            user_id: data.user.id,
             email: data.user.email,
             full_name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || "",
+            name: data.user.user_metadata?.name || "",
+            avatar_url: data.user.user_metadata?.avatar_url || null,
+            token_identifier: data.user.email || data.user.id,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
@@ -76,6 +98,7 @@ export async function GET(request: Request) {
 
     // URL to redirect to after sign in process completes
     const redirectTo = redirect_to || "/dashboard";
+    console.log('Redirecting to:', redirectTo);
     return NextResponse.redirect(new URL(redirectTo, requestUrl.origin));
   } catch (error) {
     console.error("Unexpected error in callback handler:", error);
