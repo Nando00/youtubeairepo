@@ -1,18 +1,21 @@
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { Database } from "@/types/supabase";
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { Database } from '@/types/supabase'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-if (!supabaseServiceKey) {
-  throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
+if (!supabaseUrl) {
+  throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL')
 }
 
-export const createClient = () => {
+if (!supabaseServiceKey) {
+  throw new Error('Missing env.SUPABASE_SERVICE_ROLE_KEY')
+}
+
+export const createServiceClient = () => {
   return createSupabaseClient<Database>(supabaseUrl, supabaseServiceKey, {
     auth: {
-      autoRefreshToken: false,
       persistSession: false
     }
-  });
-}; 
+  })
+} 

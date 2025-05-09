@@ -6,181 +6,178 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type Database = {
+export interface Database {
   public: {
     Tables: {
-      subscriptions: {
-        Row: {
-          amount: number | null
-          cancel_at_period_end: boolean | null
-          canceled_at: number | null
-          created_at: string
-          currency: string | null
-          current_period_end: number | null
-          current_period_start: number | null
-          custom_field_data: Json | null
-          customer_cancellation_comment: string | null
-          customer_cancellation_reason: string | null
-          customer_id: string | null
-          ended_at: number | null
-          ends_at: number | null
-          id: string
-          interval: string | null
-          metadata: Json | null
-          price_id: string | null
-          started_at: number | null
-          status: string | null
-          stripe_id: string | null
-          stripe_price_id: string | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          amount?: number | null
-          cancel_at_period_end?: boolean | null
-          canceled_at?: number | null
-          created_at?: string
-          currency?: string | null
-          current_period_end?: number | null
-          current_period_start?: number | null
-          custom_field_data?: Json | null
-          customer_cancellation_comment?: string | null
-          customer_cancellation_reason?: string | null
-          customer_id?: string | null
-          ended_at?: number | null
-          ends_at?: number | null
-          id?: string
-          interval?: string | null
-          metadata?: Json | null
-          price_id?: string | null
-          started_at?: number | null
-          status?: string | null
-          stripe_id?: string | null
-          stripe_price_id?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number | null
-          cancel_at_period_end?: boolean | null
-          canceled_at?: number | null
-          created_at?: string
-          currency?: string | null
-          current_period_end?: number | null
-          current_period_start?: number | null
-          custom_field_data?: Json | null
-          customer_cancellation_comment?: string | null
-          customer_cancellation_reason?: string | null
-          customer_id?: string | null
-          ended_at?: number | null
-          ends_at?: number | null
-          id?: string
-          interval?: string | null
-          metadata?: Json | null
-          price_id?: string | null
-          started_at?: number | null
-          status?: string | null
-          stripe_id?: string | null
-          stripe_price_id?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
       users: {
         Row: {
-          avatar_url: string | null
-          created_at: string
-          credits: string | null
-          email: string | null
-          full_name: string | null
           id: string
-          image: string | null
-          name: string | null
-          subscription: string | null
+          avatar_url: string | null
+          user_id: string
           token_identifier: string
+          subscription: string | null
+          credits: string | null
+          image: string | null
+          created_at: string
           updated_at: string | null
-          user_id: string | null
+          email: string | null
+          name: string | null
+          full_name: string | null
         }
         Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          credits?: string | null
-          email?: string | null
-          full_name?: string | null
           id: string
-          image?: string | null
-          name?: string | null
-          subscription?: string | null
+          avatar_url?: string | null
+          user_id: string
           token_identifier: string
+          subscription?: string | null
+          credits?: string | null
+          image?: string | null
+          created_at?: string
           updated_at?: string | null
-          user_id?: string | null
+          email?: string | null
+          name?: string | null
+          full_name?: string | null
         }
         Update: {
-          avatar_url?: string | null
-          created_at?: string
-          credits?: string | null
-          email?: string | null
-          full_name?: string | null
           id?: string
-          image?: string | null
-          name?: string | null
-          subscription?: string | null
+          avatar_url?: string | null
+          user_id?: string
           token_identifier?: string
+          subscription?: string | null
+          credits?: string | null
+          image?: string | null
+          created_at?: string
           updated_at?: string | null
-          user_id?: string | null
+          email?: string | null
+          name?: string | null
+          full_name?: string | null
         }
-        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          id: string
+          user_id: string | null
+          stripe_id: string | null
+          price_id: string | null
+          stripe_price_id: string | null
+          currency: string | null
+          interval: string | null
+          status: string | null
+          current_period_start: number | null
+          current_period_end: number | null
+          cancel_at_period_end: boolean | null
+          amount: number | null
+          started_at: number | null
+          ends_at: number | null
+          ended_at: number | null
+          canceled_at: number | null
+          customer_cancellation_reason: string | null
+          customer_cancellation_comment: string | null
+          metadata: Json | null
+          custom_field_data: Json | null
+          customer_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          stripe_id?: string | null
+          price_id?: string | null
+          stripe_price_id?: string | null
+          currency?: string | null
+          interval?: string | null
+          status?: string | null
+          current_period_start?: number | null
+          current_period_end?: number | null
+          cancel_at_period_end?: boolean | null
+          amount?: number | null
+          started_at?: number | null
+          ends_at?: number | null
+          ended_at?: number | null
+          canceled_at?: number | null
+          customer_cancellation_reason?: string | null
+          customer_cancellation_comment?: string | null
+          metadata?: Json | null
+          custom_field_data?: Json | null
+          customer_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          stripe_id?: string | null
+          price_id?: string | null
+          stripe_price_id?: string | null
+          currency?: string | null
+          interval?: string | null
+          status?: string | null
+          current_period_start?: number | null
+          current_period_end?: number | null
+          cancel_at_period_end?: boolean | null
+          amount?: number | null
+          started_at?: number | null
+          ends_at?: number | null
+          ended_at?: number | null
+          canceled_at?: number | null
+          customer_cancellation_reason?: string | null
+          customer_cancellation_comment?: string | null
+          metadata?: Json | null
+          custom_field_data?: Json | null
+          customer_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
       }
       webhook_events: {
         Row: {
-          created_at: string
-          data: Json | null
-          event_type: string
           id: string
-          modified_at: string
-          stripe_event_id: string | null
+          event_type: string
           type: string
+          stripe_event_id: string | null
+          data: Json | null
+          created_at: string
+          modified_at: string
         }
         Insert: {
-          created_at?: string
-          data?: Json | null
-          event_type: string
           id?: string
-          modified_at?: string
-          stripe_event_id?: string | null
+          event_type: string
           type: string
+          stripe_event_id?: string | null
+          data?: Json | null
+          created_at?: string
+          modified_at?: string
         }
         Update: {
-          created_at?: string
-          data?: Json | null
-          event_type?: string
           id?: string
-          modified_at?: string
-          stripe_event_id?: string | null
+          event_type?: string
           type?: string
+          stripe_event_id?: string | null
+          data?: Json | null
+          created_at?: string
+          modified_at?: string
         }
-        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      begin_transaction: {
+        Args: Record<PropertyKey, never>
+        Returns: void
+      }
+      commit_transaction: {
+        Args: Record<PropertyKey, never>
+        Returns: void
+      }
+      rollback_transaction: {
+        Args: Record<PropertyKey, never>
+        Returns: void
+      }
     }
     Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
       [_ in never]: never
     }
   }

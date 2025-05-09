@@ -1,130 +1,81 @@
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createServiceClient } from "@/lib/supabase/service";
+import { createServiceClient } from "@/lib/supabase/service";
 import { NextResponse } from "next/server";
+import { cookies } from 'next/headers'
 
 export async function GET(request: Request) {
-  try {
-    const requestUrl = new URL(request.url);
-    const code = requestUrl.searchParams.get("code");
-    const error = requestUrl.searchParams.get("error");
-    const error_description = requestUrl.searchParams.get("error_description");
-    const redirect_to = requestUrl.searchParams.get("redirect_to");
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get("code");
+  const next = requestUrl.searchParams.get("next") ?? "/";
 
-    // Log the full URL and parameters for debugging
-    console.log('Auth callback received:', {
-      url: request.url,
-      code: code ? 'present' : 'missing',
-      error,
-      error_description,
-      redirect_to
-    });
-
-    // Handle OAuth errors
-    if (error) {
-      console.error('OAuth error:', { error, error_description });
-      return NextResponse.redirect(
-        new URL(`/sign-in?error=${encodeURIComponent(error_description || error)}`, requestUrl.origin)
-      );
-    }
-
-    if (!code) {
-      console.error("No code provided in callback. Full URL:", request.url);
-      return NextResponse.redirect(
-        new URL("/sign-in?error=missing-code", requestUrl.origin)
-      );
-    }
-
-    const supabase = await createClient();
+  if (code) {
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     const serviceClient = createServiceClient();
 
-    // Exchange the code for a session
-    const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+    try {
+      // Log the full URL and parameters for debugging
+      console.log("Callback URL:", requestUrl.toString());
+      console.log("Code:", code);
+      console.log("Next:", next);
 
-    if (sessionError) {
-      console.error("Error exchanging code for session:", sessionError);
-      return NextResponse.redirect(
-        new URL(`/sign-in?error=${encodeURIComponent(sessionError.message)}`, requestUrl.origin)
-      );
-    }
+      // Exchange the code for a session
+      const { data: { session }, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        return NextResponse.redirect(`${requestUrl.origin}/auth/sign-in?error=${encodeURIComponent(sessionError.message)}`);
+      }
 
-    // Check if user was successfully authenticated and exists
-    if (data?.user) {
+      if (!session?.user) {
+        console.error("No session or user found");
+        return NextResponse.redirect(`${requestUrl.origin}/auth/sign-in?error=No session found`);
+      }
+
       try {
-        // Get the current user's ID as a string
-        const userId = data.user.id.toString();
-
-        // First, try to delete any existing user record (in case of manual deletion)
+        // Delete existing user record if it exists
         const { error: deleteError } = await serviceClient
           .from("users")
           .delete()
-          .eq("user_id", userId);
+          .eq("user_id", session.user.id);
 
         if (deleteError) {
-          console.error("Error deleting existing user record:", deleteError);
-          // Continue anyway as this might be a new user
+          console.error("Failed to delete existing user:", deleteError);
+          throw deleteError;
         }
 
-        // Now create the new user record
-        const userData = {
-          id: data.user.id,
-          user_id: userId,
-          email: data.user.email,
-          full_name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || "",
-          name: data.user.user_metadata?.name || "",
-          avatar_url: data.user.user_metadata?.avatar_url || null,
-          token_identifier: data.user.email || userId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-
-        console.log("Creating new user record:", {
-          ...userData,
-          id: userData.id.substring(0, 8) + '...', // Log partial ID for security
-          email: userData.email ? 'present' : 'missing'
-        });
-
-        // Insert the user record using service role client
+        // Create new user record
         const { error: insertError } = await serviceClient
           .from("users")
-          .insert(userData)
-          .select()
-          .single();
+          .insert({
+            id: session.user.id,
+            user_id: session.user.id,
+            email: session.user.email,
+            name: session.user.user_metadata?.name,
+            full_name: session.user.user_metadata?.full_name,
+            avatar_url: session.user.user_metadata?.avatar_url,
+            token_identifier: session.user.email || session.user.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
 
         if (insertError) {
-          console.error("Error creating user record:", {
-            code: insertError.code,
-            message: insertError.message,
-            details: insertError.details,
-            hint: insertError.hint,
-            userId
-          });
-          
-          // If we can't create the user record, sign them out and redirect to sign in
-          await supabase.auth.signOut();
-          return NextResponse.redirect(
-            new URL(`/sign-in?error=${encodeURIComponent(insertError.message)}`, requestUrl.origin)
-          );
+          console.error("Failed to insert new user:", insertError);
+          throw insertError;
         }
 
-        console.log("User created successfully");
+        // Redirect to the specified URL
+        return NextResponse.redirect(`${requestUrl.origin}${next}`);
       } catch (error) {
-        console.error("Error in user creation process:", error);
-        // If there's an error, sign them out and redirect to sign in
-        await supabase.auth.signOut();
-        return NextResponse.redirect(
-          new URL("/sign-in?error=user-creation-failed", requestUrl.origin)
-        );
+        console.error("Error managing user record:", error);
+        throw error;
       }
+    } catch (error) {
+      console.error("Error in callback:", error);
+      return NextResponse.redirect(`${requestUrl.origin}/auth/sign-in?error=${encodeURIComponent("Failed to process sign in")}`);
     }
-
-    // URL to redirect to after sign in process completes
-    const redirectTo = redirect_to || "/dashboard";
-    console.log('Redirecting to:', redirectTo);
-    return NextResponse.redirect(new URL(redirectTo, requestUrl.origin));
-  } catch (error) {
-    console.error("Unexpected error in callback handler:", error);
-    return NextResponse.redirect(
-      new URL("/sign-in?error=unexpected", request.url)
-    );
   }
+
+  // Return the user to an error page with some instructions
+  return NextResponse.redirect(`${requestUrl.origin}/auth/sign-in?error=${encodeURIComponent("No code provided")}`);
 }

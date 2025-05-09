@@ -1,34 +1,28 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { Database } from "@/types/supabase";
 
-export const createClient = async () => {
-  const cookieStore = cookies();
-
-  return createServerClient(
+export const createClient = (cookieStore: ReturnType<typeof cookies>) => {
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
           try {
-            return cookieStore.getAll().map(({ name, value }) => ({
-              name,
-              value,
-            }));
+            cookieStore.set({ name, value, ...options });
           } catch (error) {
-            // If cookies() is called in an environment where it's not allowed
-            console.error("Error accessing cookies:", error);
-            return [];
+            // Handle cookie errors
           }
         },
-        setAll(cookiesToSet) {
+        remove(name: string, options: any) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
-            });
+            cookieStore.set({ name, value: '', ...options });
           } catch (error) {
-            // If cookies() is called in an environment where it's not allowed
-            console.error("Error setting cookies:", error);
+            // Handle cookie errors
           }
         },
       },

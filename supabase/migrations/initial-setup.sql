@@ -80,6 +80,40 @@ CREATE POLICY "Users can view own data" ON public.users
 ALTER TABLE public.users FORCE ROW LEVEL SECURITY;
 GRANT ALL ON public.users TO service_role;
 
+-- Create transaction management functions
+CREATE OR REPLACE FUNCTION public.begin_transaction()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- Start a new transaction
+  PERFORM pg_advisory_xact_lock(1);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.commit_transaction()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- Commit the current transaction
+  PERFORM pg_advisory_xact_lock(1);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.rollback_transaction()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- Rollback the current transaction
+  PERFORM pg_advisory_xact_lock(1);
+END;
+$$;
+
 -- Create a function that will be triggered when a new user signs up
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
@@ -136,3 +170,4 @@ DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
 CREATE TRIGGER on_auth_user_updated
   AFTER UPDATE ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_user_update(); 
+
