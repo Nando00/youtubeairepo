@@ -14,24 +14,47 @@ export const signInWithOAuthAction = async (formData: FormData) => {
 
   const supabase = await createClient();
 
-  // Use the production URL directly
-  const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`;
+  // Get the current URL to determine if we're in development or production
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const baseUrl = isDevelopment 
+    ? 'http://localhost:3000'
+    : process.env.NEXT_PUBLIC_APP_URL;
+
+  if (!baseUrl) {
+    console.error('Missing NEXT_PUBLIC_APP_URL environment variable');
+    redirect("/sign-in?error=Configuration error");
+  }
+
+  const redirectTo = `${baseUrl}/auth/callback`;
+
+  console.log('Initiating OAuth sign in with:', {
+    provider,
+    redirectTo,
+    environment: process.env.NODE_ENV
+  });
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: provider as any,
     options: {
       redirectTo,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent',
+      },
     },
   });
 
   if (error) {
+    console.error('OAuth error:', error);
     redirect(`/sign-in?error=${encodeURIComponent(error.message)}`);
   }
 
   if (data?.url) {
+    console.log('Redirecting to OAuth provider:', data.url);
     redirect(data.url);
   }
 
+  console.error('No OAuth URL returned');
   redirect("/sign-in?error=Could not initiate OAuth flow");
 };
 
