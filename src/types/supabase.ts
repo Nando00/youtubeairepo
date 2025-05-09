@@ -56,112 +56,76 @@ export interface Database {
       subscriptions: {
         Row: {
           id: string
-          user_id: string | null
-          stripe_id: string | null
+          user_id: string
+          status: string
           price_id: string | null
-          stripe_price_id: string | null
-          currency: string | null
-          interval: string | null
-          status: string | null
-          current_period_start: number | null
-          current_period_end: number | null
+          quantity: number | null
           cancel_at_period_end: boolean | null
-          amount: number | null
-          started_at: number | null
-          ends_at: number | null
-          ended_at: number | null
-          canceled_at: number | null
-          customer_cancellation_reason: string | null
-          customer_cancellation_comment: string | null
-          metadata: Json | null
-          custom_field_data: Json | null
-          customer_id: string | null
-          created_at: string
-          updated_at: string
+          created: string | null
+          current_period_start: string | null
+          current_period_end: string | null
+          ended_at: string | null
+          cancel_at: string | null
+          canceled_at: string | null
+          trial_start: string | null
+          trial_end: string | null
         }
         Insert: {
-          id?: string
-          user_id?: string | null
-          stripe_id?: string | null
+          id: string
+          user_id: string
+          status: string
           price_id?: string | null
-          stripe_price_id?: string | null
-          currency?: string | null
-          interval?: string | null
-          status?: string | null
-          current_period_start?: number | null
-          current_period_end?: number | null
+          quantity?: number | null
           cancel_at_period_end?: boolean | null
-          amount?: number | null
-          started_at?: number | null
-          ends_at?: number | null
-          ended_at?: number | null
-          canceled_at?: number | null
-          customer_cancellation_reason?: string | null
-          customer_cancellation_comment?: string | null
-          metadata?: Json | null
-          custom_field_data?: Json | null
-          customer_id?: string | null
-          created_at?: string
-          updated_at?: string
+          created?: string | null
+          current_period_start?: string | null
+          current_period_end?: string | null
+          ended_at?: string | null
+          cancel_at?: string | null
+          canceled_at?: string | null
+          trial_start?: string | null
+          trial_end?: string | null
         }
         Update: {
           id?: string
-          user_id?: string | null
-          stripe_id?: string | null
+          user_id?: string
+          status?: string
           price_id?: string | null
-          stripe_price_id?: string | null
-          currency?: string | null
-          interval?: string | null
-          status?: string | null
-          current_period_start?: number | null
-          current_period_end?: number | null
+          quantity?: number | null
           cancel_at_period_end?: boolean | null
-          amount?: number | null
-          started_at?: number | null
-          ends_at?: number | null
-          ended_at?: number | null
-          canceled_at?: number | null
-          customer_cancellation_reason?: string | null
-          customer_cancellation_comment?: string | null
-          metadata?: Json | null
-          custom_field_data?: Json | null
-          customer_id?: string | null
-          created_at?: string
-          updated_at?: string
+          created?: string | null
+          current_period_start?: string | null
+          current_period_end?: string | null
+          ended_at?: string | null
+          cancel_at?: string | null
+          canceled_at?: string | null
+          trial_start?: string | null
+          trial_end?: string | null
         }
       }
       webhook_events: {
         Row: {
           id: string
+          event_id: string
           event_type: string
-          type: string
-          stripe_event_id: string | null
-          data: Json | null
           created_at: string
-          modified_at: string
+          payload: Json
         }
         Insert: {
-          id?: string
+          id: string
+          event_id: string
           event_type: string
-          type: string
-          stripe_event_id?: string | null
-          data?: Json | null
           created_at?: string
-          modified_at?: string
+          payload: Json
         }
         Update: {
           id?: string
+          event_id?: string
           event_type?: string
-          type?: string
-          stripe_event_id?: string | null
-          data?: Json | null
           created_at?: string
-          modified_at?: string
+          payload?: Json
         }
       }
-    }
-    Views: {
-      [_ in never]: never
     }
     Functions: {
       begin_transaction: {
@@ -177,9 +141,6 @@ export interface Database {
         Returns: void
       }
     }
-    Enums: {
-      [_ in never]: never
-    }
   }
 }
 
@@ -187,25 +148,21 @@ type DefaultSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof Database },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof Database
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -256,36 +213,6 @@ export type TablesUpdate<
       }
       ? U
       : never
-    : never
-
-export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
