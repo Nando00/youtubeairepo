@@ -2,7 +2,7 @@
 
 import { encodedRedirect } from "@/utils/utils";
 import { redirect } from "next/navigation";
-import { createClient } from "../../supabase/server";
+import { createClient } from '@/lib/supabase/server';
 
 // New OAuth function
 export const signInWithOAuthAction = async (formData: FormData) => {

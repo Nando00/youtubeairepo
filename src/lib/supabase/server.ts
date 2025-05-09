@@ -6,7 +6,7 @@ export const createClient = async () => {
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
@@ -16,6 +16,7 @@ export const createClient = async () => {
               value,
             }));
           } catch (error) {
+            // If cookies() is called in an environment where it's not allowed
             console.error("Error accessing cookies:", error);
             return [];
           }
@@ -26,6 +27,7 @@ export const createClient = async () => {
               cookieStore.set(name, value, options);
             });
           } catch (error) {
+            // If cookies() is called in an environment where it's not allowed
             console.error("Error setting cookies:", error);
           }
         },

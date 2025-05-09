@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 import { Youtube } from "lucide-react";
 import UserProfile from "./user-profile";
 import { ThemeToggle } from "./theme-toggle";
-import { createClient } from "../../supabase/client";
+import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 

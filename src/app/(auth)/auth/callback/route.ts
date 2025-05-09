@@ -1,5 +1,5 @@
-import { createClient } from "../../../../supabase/server";
-import { createClient as createServiceClient } from "../../../../supabase/service";
+import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@/lib/supabase/service";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
