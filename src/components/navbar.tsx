@@ -7,7 +7,7 @@ import UserProfile from "./user-profile";
 import { ThemeToggle } from "./theme-toggle";
 import { createClient } from "../../supabase/client";
 import { useEffect, useState } from "react";
-import { User } from "@supabase/supabase-js";
+import { User, Session } from "@supabase/supabase-js";
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
@@ -18,13 +18,9 @@ export default function Navbar() {
     const initializeAuth = async () => {
       try {
         // Get initial session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data } = await supabase.auth.getSession();
+        const session = data.session;
         
-        if (error) {
-          console.error('Error getting session:', error);
-          return;
-        }
-
         console.log('Initial session:', session);
         setUser(session?.user ?? null);
         setLoading(false);
