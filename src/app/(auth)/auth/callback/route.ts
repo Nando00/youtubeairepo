@@ -1,5 +1,5 @@
-import { createClient } from "../../../../../supabase/server";
-import { createClient as createServiceClient } from "../../../../../supabase/service";
+import { createClient } from "../../../../supabase/server";
+import { createClient as createServiceClient } from "../../../../supabase/service";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -61,6 +61,7 @@ export async function GET(request: Request) {
 
         if (deleteError) {
           console.error("Error deleting existing user record:", deleteError);
+          // Continue anyway as this might be a new user
         }
 
         // Now create the new user record
