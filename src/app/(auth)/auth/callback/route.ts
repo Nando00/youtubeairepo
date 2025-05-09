@@ -1,5 +1,6 @@
 import { createClient } from "../../../../../supabase/server";
 import { NextResponse } from "next/server";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 export async function GET(request: Request) {
   try {
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
           .single();
 
         // If user doesn't exist in your custom table, create a record
-        if (!existingUser || fetchError?.code === "PGRST116") {
+        if (!existingUser) {
           const userData = {
             id: data.user.id,
             email: data.user.email,
@@ -54,11 +55,7 @@ export async function GET(request: Request) {
 
           if (insertError) {
             console.error("Error creating user record:", insertError);
-            console.error("Error details:", {
-              code: insertError.code,
-              message: insertError.message,
-              details: insertError.details
-            });
+            console.error("Error details:", insertError);
             
             // If we can't create the user record, sign them out and redirect to sign in
             await supabase.auth.signOut();
