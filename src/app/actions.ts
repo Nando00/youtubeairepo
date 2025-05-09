@@ -16,13 +16,25 @@ export const signInWithOAuthAction = async (formData: FormData) => {
 
   // Get the current URL to determine if we're in development or production
   const isDevelopment = process.env.NODE_ENV === 'development';
-  const baseUrl = isDevelopment 
-    ? 'http://localhost:3000'
-    : process.env.NEXT_PUBLIC_APP_URL;
+  let baseUrl;
+
+  if (isDevelopment) {
+    baseUrl = 'http://localhost:3000';
+  } else {
+    // In production, try to get the URL from the environment or use the request origin
+    baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL;
+    
+    // If we have a Vercel URL but no protocol, add https
+    if (baseUrl && !baseUrl.startsWith('http')) {
+      baseUrl = `https://${baseUrl}`;
+    }
+  }
 
   if (!baseUrl) {
-    console.error('Missing NEXT_PUBLIC_APP_URL environment variable');
-    redirect("/sign-in?error=Configuration error");
+    console.error('Missing URL configuration. Environment:', process.env.NODE_ENV);
+    console.error('NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL);
+    console.error('VERCEL_URL:', process.env.VERCEL_URL);
+    redirect("/sign-in?error=Missing URL configuration");
   }
 
   const redirectTo = `${baseUrl}/auth/callback`;
@@ -30,7 +42,8 @@ export const signInWithOAuthAction = async (formData: FormData) => {
   console.log('Initiating OAuth sign in with:', {
     provider,
     redirectTo,
-    environment: process.env.NODE_ENV
+    environment: process.env.NODE_ENV,
+    baseUrl
   });
 
   const { data, error } = await supabase.auth.signInWithOAuth({
